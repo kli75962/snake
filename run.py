@@ -7,6 +7,8 @@ def main():
     dict_solver = {
         "greedy": "GreedySolver",
         "hamilton": "HamiltonSolver",
+        "astar": "AStarSolver",
+        "astar_safe": "AStarSafeSolver",
         "dqn": "DQNSolver",
     }
 

@@ -7,7 +7,7 @@ from snake.base import Direc, Map, PointType, Pos, Snake
 from snake.gui import GameWindow
 
 # Add solver names to globals()
-from snake.solver import DQNSolver, GreedySolver, HamiltonSolver
+from snake.solver import AStarSafeSolver, AStarSolver, DQNSolver, GreedySolver, HamiltonSolver
 
 
 @unique
@@ -234,18 +234,19 @@ class Game:
 
     def _init_log_file(self):
         try:
-            os.makedirs("logs")
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+            os.makedirs("logs", exist_ok=True)
+        except Exception:
+            pass
         try:
             self._log_file = None
             self._log_file = open("logs/snake.log", "w", encoding="utf-8")
-        except FileNotFoundError:
+        except Exception:
             if self._log_file:
                 self._log_file.close()
 
     def _write_logs(self):
+        if not self._log_file:
+            return
         self._log_file.write(
             f"[ Episode {self._episode} / Step {self._snake.steps} ]\n"
         )

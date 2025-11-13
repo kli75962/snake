@@ -1,3 +1,5 @@
+from snake.solver.astar import AStarSolver
+from snake.solver.astar_safe import AStarSafeSolver
 from snake.solver.dqn import DQNSolver
 from snake.solver.greedy import GreedySolver
 from snake.solver.hamilton import HamiltonSolver
