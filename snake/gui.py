@@ -20,12 +20,14 @@ class GameWindow(tk.Tk):
         self._grid_height = conf.map_height / (game_map.num_cols - 2)
         self._init_widgets()
         self._init_draw_params()
+        self._running = True
 
         if game is not None:
             self._game = game
             self._snake = game.snake
 
         def on_destroy():
+            self._running = False
             if callable(on_exit):
                 on_exit()
             self.destroy()
@@ -34,10 +36,19 @@ class GameWindow(tk.Tk):
 
     def show(self, game_loop=None):
         def cb():
-            if callable(game_loop):
-                game_loop()
-            self._update_contents()
-            self.after(self._conf.interval_draw, cb)
+            if not self._running:
+                return
+            try:
+                if callable(game_loop):
+                    game_loop()
+                self._update_contents()
+                self.after(self._conf.interval_draw, cb)
+            except (tk.TclError, KeyboardInterrupt):
+                # Window was closed or Ctrl+C pressed, stop the callback
+                self._running = False
+            except Exception as e:
+                print(f"Error in game loop: {e}")
+                self._running = False
 
         self.after(100, cb)
         self.mainloop()
@@ -107,14 +118,20 @@ class GameWindow(tk.Tk):
         self._dy2_food = (1 - food_pad_ratio) * self._grid_height
 
     def _update_contents(self):
-        self._canvas.delete(tk.ALL)
-        self._draw_bg()
-        if self._conf.show_grid_line:
-            self._draw_grid_line()
-        if self._conf.show_info_panel:
-            self._draw_info_panel()
-        self._draw_map_contents()
-        self.update()
+        if not self._running:
+            return
+        try:
+            self._canvas.delete(tk.ALL)
+            self._draw_bg()
+            if self._conf.show_grid_line:
+                self._draw_grid_line()
+            if self._conf.show_info_panel:
+                self._draw_info_panel()
+            self._draw_map_contents()
+            self.update()
+        except tk.TclError:
+            # Window was closed
+            self._running = False
 
     def _draw_bg(self):
         self._canvas.create_rectangle(

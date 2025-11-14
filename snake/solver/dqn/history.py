@@ -159,34 +159,34 @@ class History:
 
     def load(self, beg_step, end_step):
         log("Loading history...")
-        self._history_loss = np.load(History.PATH_DATA % ("loss", beg_step, end_step))
+        self._history_loss = np.load(History.PATH_DATA % ("loss", beg_step, end_step)).tolist()
         self._history_avg_reward = np.load(
             History.PATH_DATA % ("avg-reward", beg_step, end_step)
-        )
+        ).tolist()
         self._history_min_reward = np.load(
             History.PATH_DATA % ("min-reward", beg_step, end_step)
-        )
+        ).tolist()
         self._history_max_reward = np.load(
             History.PATH_DATA % ("max-reward", beg_step, end_step)
-        )
+        ).tolist()
         self._history_avg_len = np.load(
             History.PATH_DATA % ("avg-len", beg_step, end_step)
-        )
+        ).tolist()
         self._history_min_len = np.load(
             History.PATH_DATA % ("min-len", beg_step, end_step)
-        )
+        ).tolist()
         self._history_max_len = np.load(
             History.PATH_DATA % ("max-len", beg_step, end_step)
-        )
+        ).tolist()
         self._history_avg_step = np.load(
             History.PATH_DATA % ("avg-step", beg_step, end_step)
-        )
+        ).tolist()
         self._history_min_step = np.load(
             History.PATH_DATA % ("min-step", beg_step, end_step)
-        )
+        ).tolist()
         self._history_max_step = np.load(
             History.PATH_DATA % ("max-step", beg_step, end_step)
-        )
+        ).tolist()
 
     def _plot_avg(self, learn_step_beg, name, color, data_avg, data_min, data_max):
         plt.figure(num=name)
@@ -202,22 +202,24 @@ class History:
 
         plt.legend(loc="upper left", fancybox=False, edgecolor=self._color_legend_edge)
 
-        x_max_max = (np.argmax(data_max) + learn_step_beg) * self._x_scale
-        y_max_max = np.max(data_max)
-        x_max_avg = (np.argmax(data_avg) + learn_step_beg) * self._x_scale
-        y_max_avg = np.max(data_avg)
+        # Only add annotations if data is not empty
+        if len(data_max) > 0 and len(data_avg) > 0:
+            x_max_max = (np.argmax(data_max) + learn_step_beg) * self._x_scale
+            y_max_max = np.max(data_max)
+            x_max_avg = (np.argmax(data_avg) + learn_step_beg) * self._x_scale
+            y_max_avg = np.max(data_avg)
 
-        plt.annotate(
-            f"Max: {y_max_max:.2f}",
-            xy=(x_max_max, y_max_max),
-            xytext=(-50, -25),
-            textcoords="offset points",
-            arrowprops={"facecolor": "black", "arrowstyle": "->"},
-        )
-        plt.annotate(
-            f"Max: {y_max_avg:.2f}",
-            xy=(x_max_avg, y_max_avg),
-            xytext=(-50, 20),
-            textcoords="offset points",
-            arrowprops={"facecolor": "black", "arrowstyle": "->"},
-        )
+            plt.annotate(
+                f"Max: {y_max_max:.2f}",
+                xy=(x_max_max, y_max_max),
+                xytext=(-50, -25),
+                textcoords="offset points",
+                arrowprops={"facecolor": "black", "arrowstyle": "->"},
+            )
+            plt.annotate(
+                f"Max: {y_max_avg:.2f}",
+                xy=(x_max_avg, y_max_avg),
+                xytext=(-50, 20),
+                textcoords="offset points",
+                arrowprops={"facecolor": "black", "arrowstyle": "->"},
+            )

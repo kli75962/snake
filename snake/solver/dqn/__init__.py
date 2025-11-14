@@ -5,12 +5,63 @@ import numpy as np
 
 try:
     import tensorflow as tf
+    # Enable TensorFlow 1.x compatibility mode for TensorFlow 2.x
+    if hasattr(tf, '__version__') and tf.__version__.startswith('2.'):
+        import tensorflow.compat.v1 as tf
+        tf.disable_v2_behavior()
+        
+        # Create a compatibility layer for tf.layers using tf.keras.layers
+        # This allows the code to work with both TF 2.x + Keras 2 and TF 2.x + Keras 3
+        class LayersCompatWrapper:
+            """Wrapper to make tf.keras.layers work like tf.layers"""
+            
+            @staticmethod
+            def conv2d(inputs, filters, kernel_size, strides, padding, 
+                      activation, kernel_initializer, bias_initializer, name):
+                """Wrapper for Conv2D layer"""
+                layer = tf.keras.layers.Conv2D(
+                    filters=filters,
+                    kernel_size=kernel_size,
+                    strides=strides,
+                    padding=padding,
+                    activation=activation,
+                    kernel_initializer=kernel_initializer,
+                    bias_initializer=bias_initializer,
+                    name=name
+                )
+                return layer(inputs)
+            
+            @staticmethod
+            def dense(inputs, units, activation=None, kernel_initializer=None, 
+                     bias_initializer=None, name=None):
+                """Wrapper for Dense layer"""
+                layer = tf.keras.layers.Dense(
+                    units=units,
+                    activation=activation,
+                    kernel_initializer=kernel_initializer,
+                    bias_initializer=bias_initializer,
+                    name=name
+                )
+                return layer(inputs)
+        
+        # Try to use tf.compat.v1.layers first, fall back to wrapper
+        try:
+            if hasattr(tf, 'layers') and hasattr(tf.layers, 'conv2d'):
+                # TF 2.10 or earlier with Keras 2
+                pass
+            else:
+                # TF 2.11+ with Keras 3 - use wrapper
+                tf.layers = LayersCompatWrapper()
+        except Exception:
+            # If anything fails, use the wrapper
+            tf.layers = LayersCompatWrapper()
+            
 except ImportError:
     print(
         "*------------------------------------------------------------------------------*"
     )
     print(
-        "| WARNING: Tensorflow 1.x is not installed. DQN testing will not be available. |"
+        "| WARNING: Tensorflow is not installed. DQN testing will not be available. |"
     )
     print(
         "*------------------------------------------------------------------------------*"
@@ -42,7 +93,7 @@ class DQNSolver(BaseSolver):
         self._max_learn_step = (
             3000000  # Maximum learning steps (require >= self._restore_step)
         )
-        self._restore_step = 0  # Which learning step to restore (0 means not restore)
+        self._restore_step = 5000  # Which learning step to restore (0 means not restore)
 
         # Rewards
         self._rwd_empty = -0.005
@@ -74,8 +125,8 @@ class DQNSolver(BaseSolver):
         # Frequency
         self._freq_learn = 4  # Number of snake steps
         self._freq_replace = 10000  # Learning steps
-        self._freq_log = 500  # Learning steps
-        self._freq_save = 20000  # Learning steps
+        self._freq_log = 5000  # Learning steps (memory filling phase)
+        self._freq_save = 5000  # Learning steps - save checkpoints every 5000 steps
 
         self._history_num_avg = (
             50  # How many latest history episodes to compute average
@@ -112,6 +163,7 @@ class DQNSolver(BaseSolver):
 
         # Learning history
         self._history = History(self._history_num_avg)
+        self._auto_load_history()  # Auto-load previous training history
 
         eval_params, target_params = self._build_graph()
         self._net_saver = tf.train.Saver(
@@ -138,6 +190,34 @@ class DQNSolver(BaseSolver):
                 f,
                 indent=2,
             )
+
+    def _auto_load_history(self):
+        """Automatically detect and load previous training history if exists."""
+        import glob
+        import re
+        
+        # Find all history files
+        pattern = os.path.join(_DIR_LOG, "history-avg-len-1-*.npy")
+        history_files = glob.glob(pattern)
+        
+        if not history_files:
+            log("No previous training history found, starting fresh")
+            return
+        
+        # Extract step numbers and find the latest
+        step_numbers = []
+        for f in history_files:
+            match = re.search(r'history-avg-len-1-(\d+)\.npy', f)
+            if match:
+                step_numbers.append(int(match.group(1)))
+        
+        if step_numbers:
+            latest_step = max(step_numbers)
+            try:
+                self._history.load(1, latest_step)
+                log(f"Loaded previous training history up to step {latest_step}")
+            except Exception as e:
+                log(f"Failed to load history: {e}, starting fresh")
 
     def _load_model(self):
         self._net_saver.restore(self._sess, DQNSolver.PATH_NET % self._restore_step)
@@ -509,7 +589,8 @@ class DQNSolver(BaseSolver):
                     PointType.BODY_VER,
                 ):
                     visual_state[i - 1][j - 1][3] = 1
-                raise ValueError(f"Unsupported PointType: {t}")
+                else:
+                    raise ValueError(f"Unsupported PointType: {t}")
 
         if self._use_visual_only:
             return visual_state.flatten()
@@ -586,7 +667,7 @@ class DQNSolver(BaseSolver):
     def _learn(self):
         log_msg = (
             f"step {self._learn_step} | mem_cnt: {self._mem_cnt}"
-            + " | epsilon: {self._epsilon:.6f} | beta: {self._beta:.6f}"
+            + f" | epsilon: {self._epsilon:.6f} | beta: {self._beta:.6f}"
         )
 
         # Compute average

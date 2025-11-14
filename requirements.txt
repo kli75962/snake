@@ -1,4 +1,6 @@
 pytest
 matplotlib
 numpy
+# TensorFlow for DQN solver - use 2.10.x for compatibility
+# tensorflow==2.10.1
 tensorflow
