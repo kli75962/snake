@@ -1,20 +1,12 @@
-import sys
-import os
-
-# Add current directory to Python path
-sys.path.insert(0, os.path.dirname(__file__))
-
 from snake.base import Direc, Map, PointType, Pos, Snake
 from snake.solver.dfs import DFSSolver
 
 def main():
     print("=== DFS Solver Simple Test ===")
     
-    # Create a small map
     game_map = Map(8, 8)
     snake = Snake(game_map)
     
-    # Manually place food
     food_pos = Pos(4, 4)
     game_map.create_food(food_pos)
     
@@ -23,22 +15,18 @@ def main():
     print(f"Food position: {food_pos}")
     print(f"Snake direction: {snake.direc}")
     
-    # Create DFS solver
     dfs_solver = DFSSolver(snake)
     
-    # Run a few steps for testing
     for step in range(10):
         next_direc = dfs_solver.next_direc()
         print(f"\nStep {step + 1}:")
         print(f"Selected direction: {next_direc}")
         
-        # Move the snake
         snake.move(next_direc)
         
         print(f"New snake head position: {snake.head()}")
         print(f"Snake length: {snake.len()}")
         
-        # Check if food is eaten
         if snake.head() == food_pos:
             print("*** Food eaten! ***")
             new_food = game_map.create_rand_food()
@@ -49,7 +37,6 @@ def main():
                 print("Map is full!")
                 break
         
-        # Check if snake is dead
         if snake.dead:
             print("*** Snake died! ***")
             break
