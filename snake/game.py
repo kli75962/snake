@@ -8,7 +8,7 @@ from snake.gui import GameWindow
 
 # Add solver names to globals()
 from snake.solver import AStarSafeSolver, AStarSolver, DQNSolver, GreedySolver, HamiltonSolver
-
+from snake.solver.dfs import DFSSolver
 
 @unique
 class GameMode(Enum):
@@ -276,3 +276,18 @@ class Game:
             f"[ last/next direc: {self._snake.direc}/{self._snake.direc_next} ]\n"
         )
         self._log_file.write("\n")
+def create_solver(self):
+    if self._conf.solver_name == "GreedySolver":
+        from snake.solver.greedy import GreedySolver
+        return GreedySolver(self._snake)
+    elif self._conf.solver_name == "HamiltonSolver":
+        from snake.solver.hamilton import HamiltonSolver
+        return HamiltonSolver(self._snake)
+    elif self._conf.solver_name == "DQNSolver":
+        from snake.solver.dqn import DQNSolver
+        return DQNSolver(self._snake)
+    elif self._conf.solver_name == "DFSSolver":  
+        from snake.solver.dfs import DFSSolver
+        return DFSSolver(self._snake)
+    else:
+        raise ValueError(f"Unknown solver name: {self._conf.solver_name}")
