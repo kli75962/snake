@@ -10,6 +10,7 @@ def main():
         "astar": "AStarSolver",
         "astar_safe": "AStarSafeSolver",
         "dqn": "DQNSolver",
+        "dfs": "DFSSolver", 
     }
 
     dict_mode = {
