@@ -1,6 +1,6 @@
-# Snake Game AI Solver
+# Snake
 
-AI solver implementations for the Snake game. Multiple algorithms are available to control the snake's movement and maximize game performance.
+The project focuses on the artificial intelligence of the [Snake][snake-wiki] game. The snake's goal is to eat the food continuously and fill the map with its bodies as soon as possible. Originally, the project was [written in C++][snake-cpp]. It has now been rewritten in Python for a user-friendly GUI and the simplicity in algorithm implementations.
 
 ***[Algorithms >][doc-algorithms]***
 
@@ -23,8 +23,15 @@ Test results (averaged over 1000 episodes):
 
 Requirements: Python 3.6+ with [Tkinter][doc-tkinter] installed.
 
-```bash
+```
 pip install -r requirements.txt
+python run.py [-h]
+```
+
+Run unit tests:
+
+```
+python -m pytest
 ```
 
 ## Quick Start
@@ -92,14 +99,20 @@ python run.py --stats-cli -all -e 3
 
 This runs all algorithm combinations across both path-based solvers (Hamilton and Greedy), showing average path length and steps for each combination. Useful for understanding algorithm behavior and performance characteristics.
 
-## Available Solvers
-
-| Solver | Type | Speed | Reliability |
-|--------|------|-------|-------------|
-| Hamilton | Path-based | Fast | ⭐⭐⭐⭐⭐ |
-| Greedy | Path-based | Medium | ⭐⭐⭐⭐ |
-| DQN | Machine Learning | Medium | ⭐⭐ |
-
 ## License
 
-See [LICENSE](./LICENSE) for details.
+See the [LICENSE](./LICENSE) file for license rights and limitations.
+
+
+[snake-wiki]: https://en.wikipedia.org/wiki/Snake_(video_game)
+[snake-cpp]: https://github.com/chuyangliu/snake/tree/7227f5e0f3185b07e9e3de1ac5c19a17b9de3e3c
+
+[doc-tkinter]: https://docs.python.org/3/library/tkinter.html
+[doc-algorithms]: ./docs/algorithms.md
+[doc-greedy]: ./docs/algorithms.md#greedy-solver
+[doc-hamilton]: ./docs/algorithms.md#hamilton-solver
+[doc-dqn]: ./docs/algorithms.md#dqn-solver
+
+[demo-hamilton]: ./docs/images/solver_hamilton.gif
+[demo-greedy]: ./docs/images/solver_greedy.gif
+[demo-dqn]: ./docs/images/solver_dqn.gif
