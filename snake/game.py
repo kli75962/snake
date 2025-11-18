@@ -7,8 +7,7 @@ from snake.base import Direc, Map, PointType, Pos, Snake
 from snake.gui import GameWindow
 
 # Add solver names to globals()
-from snake.solver import AStarSafeSolver, AStarSolver, DQNSolver, GreedySolver, HamiltonSolver
-from snake.solver.dfs import DFSSolver
+from snake.solver import DQNSolver, GreedySolver, HamiltonSolver
 
 @unique
 class GameMode(Enum):
@@ -27,6 +26,8 @@ class GameConf:
 
         # Solver
         self.solver_name = "HamiltonSolver"  # Class name of the solver
+        self.short_algr = "bfs"  # Algorithm for shortest path (bfs, astar, dfs)
+        self.long_algr = "bfs"  # Algorithm for longest path (bfs, astar, dfs)
 
         # Size
         self.map_rows = 8
@@ -85,7 +86,12 @@ class Game:
             self._map, conf.init_direc, conf.init_bodies, conf.init_types
         )
         self._pause = False
-        self._solver = globals()[self._conf.solver_name](self._snake)
+        # Create solver with algorithm parameters
+        solver_class = globals()[self._conf.solver_name]
+        if self._conf.solver_name in ["GreedySolver", "HamiltonSolver"]:
+            self._solver = solver_class(self._snake, conf.short_algr, conf.long_algr)
+        else:
+            self._solver = solver_class(self._snake)
         self._episode = 1
         self._init_log_file()
 
@@ -286,8 +292,5 @@ def create_solver(self):
     elif self._conf.solver_name == "DQNSolver":
         from snake.solver.dqn import DQNSolver
         return DQNSolver(self._snake)
-    elif self._conf.solver_name == "DFSSolver":  
-        from snake.solver.dfs import DFSSolver
-        return DFSSolver(self._snake)
     else:
         raise ValueError(f"Unknown solver name: {self._conf.solver_name}")

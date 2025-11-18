@@ -15,8 +15,6 @@ class SolverStatsWindow(tk.Tk):
     SOLVERS = [
         ("Hamilton", "HamiltonSolver"),
         ("Greedy", "GreedySolver"),
-        ("A* Fast", "AStarSolver"),
-        ("A* Safe", "AStarSafeSolver"),
     ]
     
     def __init__(self):

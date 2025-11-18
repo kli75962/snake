@@ -18,13 +18,17 @@ class _TableCell:
 
 
 class HamiltonSolver(BaseSolver):
-    def __init__(self, snake, shortcuts=True):
+    def __init__(self, snake, short_algr="bfs", long_algr="heuristic", shortcuts=True):
         if snake.map.num_rows % 2 != 0 or snake.map.num_cols % 2 != 0:
             raise ValueError("num_rows and num_cols must be even.")
         super().__init__(snake)
 
+        # A* for longest path is not supported in Hamilton solver
+        if long_algr == "astar":
+            raise ValueError("A* algorithm is not supported for longest path in Hamilton solver. Use 'bfs' or 'dfs' instead.")
+
         self._shortcuts = shortcuts
-        self._path_solver = PathSolver(snake)
+        self._path_solver = PathSolver(snake, short_algr, long_algr)
         self._table = [
             [_TableCell() for _ in range(snake.map.num_cols)]
             for _ in range(snake.map.num_rows)

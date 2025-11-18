@@ -4,9 +4,9 @@ from snake.solver.path import PathSolver
 
 
 class GreedySolver(BaseSolver):
-    def __init__(self, snake):
+    def __init__(self, snake, short_algr="bfs", long_algr="heuristic"):
         super().__init__(snake)
-        self._path_solver = PathSolver(snake)
+        self._path_solver = PathSolver(snake, short_algr, long_algr)
 
     def next_direc(self):
         # Create a virtual snake

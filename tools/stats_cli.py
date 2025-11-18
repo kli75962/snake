@@ -15,8 +15,6 @@ def run_benchmarks(episodes=10, solvers=None):
     solvers_available = {
         "hamilton": "HamiltonSolver",
         "greedy": "GreedySolver",
-        "astar": "AStarSolver",
-        "astar_safe": "AStarSafeSolver",
         "dqn": "DQNSolver",
     }
     
@@ -112,6 +110,125 @@ def _print_table_manual(headers, rows):
         row_str = " | ".join(str(cell).ljust(col_widths[i]) for i, cell in enumerate(row))
         print(row_str)
 
+def run_pathfinder_benchmarks(episodes=5):
+    """Benchmark all solvers with different pathfinder algorithm combinations."""
+    solvers = ["hamilton", "greedy"]  # Only path-based solvers support custom algorithms
+    algorithms = ["bfs", "astar", "dfs"]
+    
+    results = {}
+    total_combinations = len(solvers) * len(algorithms) * len(algorithms)
+    current = 0
+    
+    for solver_name in solvers:
+        for short_alg in algorithms:
+            for long_alg in algorithms:
+                current += 1
+                print(f"[{current}/{total_combinations}] {solver_name} "
+                      f"(short={short_alg}, long={long_alg})... ", end="", flush=True)
+                try:
+                    conf = GameConf()
+                    conf.solver_name = solver_name.capitalize() + "Solver"
+                    conf.short_algr = short_alg
+                    conf.long_algr = long_alg
+                    conf.mode = GameMode.BENCHMARK
+                    
+                    game = Game(conf)
+                    total_length = 0
+                    total_steps = 0
+                    steps_limit = 5000
+                    
+                    for ep in range(episodes):
+                        while True:
+                            game._game_main_normal()
+                            if game._map.is_full():
+                                break
+                            if game._snake.dead:
+                                break
+                            if game._snake.steps >= steps_limit:
+                                break
+                        
+                        total_length += game._snake.len()
+                        total_steps += game._snake.steps
+                        game._reset()
+                    
+                    avg_length = total_length / episodes if episodes > 0 else 0
+                    avg_steps = total_steps / episodes if episodes > 0 else 0
+                    
+                    key = f"{solver_name}|{short_alg}|{long_alg}"
+                    results[key] = {
+                        "solver": solver_name.capitalize(),
+                        "short_alg": short_alg,
+                        "long_alg": long_alg,
+                        "avg_length": avg_length,
+                        "avg_steps": avg_steps,
+                    }
+                    
+                    print(f"✓ (Len: {avg_length:.1f}, Steps: {avg_steps:.0f})")
+                    
+                except Exception as e:
+                    error_msg = str(e)
+                    if "not supported" in error_msg.lower():
+                        print(f"✗ Not Supported: {error_msg}")
+                    else:
+                        print(f"✗ Error: {error_msg[:60]}")
+                    key = f"{solver_name}|{short_alg}|{long_alg}"
+                    results[key] = {
+                        "solver": solver_name.capitalize(),
+                        "short_alg": short_alg,
+                        "long_alg": long_alg,
+                        "avg_length": "N/A",
+                        "avg_steps": "N/A",
+                    }
+    
+    return results
+
+def display_pathfinder_table(results):
+    """Display results in a formatted table organized by solver."""
+    # Group results by solver
+    by_solver = {}
+    for key, data in results.items():
+        solver = data["solver"]
+        if solver not in by_solver:
+            by_solver[solver] = []
+        by_solver[solver].append(data)
+    
+    # Display table for each solver
+    for solver in sorted(by_solver.keys()):
+        print(f"\n{'='*90}")
+        print(f"{solver} Solver - Path Finder Algorithm Comparison")
+        print(f"{'='*90}")
+        
+        headers = ["Shortest Alg", "Longest Alg", "Avg Length", "Avg Steps"]
+        rows = []
+        
+        for data in sorted(by_solver[solver], key=lambda x: (x["short_alg"], x["long_alg"])):
+            # Skip A* for longest path (not supported in Hamilton solver)
+            if data["long_alg"] == "astar" and solver == "Hamilton":
+                continue
+            
+            avg_length = data["avg_length"]
+            avg_steps = data["avg_steps"]
+            
+            if isinstance(avg_length, str):
+                avg_length_str = avg_length
+                avg_steps_str = avg_steps
+            else:
+                avg_length_str = f"{avg_length:.2f}"
+                avg_steps_str = f"{avg_steps:.0f}"
+            
+            rows.append([
+                data["short_alg"],
+                data["long_alg"],
+                avg_length_str,
+                avg_steps_str,
+            ])
+        
+        if HAS_TABULATE:
+            table = tabulate(rows, headers=headers, tablefmt="grid")
+            print(table)
+        else:
+            _print_table_manual(headers, rows)
+
 def main():
     parser = argparse.ArgumentParser(
         description="Run benchmarks for all snake solvers and display statistics."
@@ -120,24 +237,44 @@ def main():
         "-e",
         "--episodes",
         type=int,
-        default=10,
-        help="Number of episodes to run per solver (default: 10)",
+        default=None,
+        help="Number of episodes to run per solver (default: 10 for standard, 5 for -all)",
     )
     parser.add_argument(
         "-s",
         "--solvers",
         nargs="+",
         choices=["hamilton", "greedy", "astar", "astar_safe", "dqn"],
-        help="Specific solvers to benchmark (default: all)",
+        help="Specific solvers to benchmark (for standard mode only)",
+    )
+    parser.add_argument(
+        "-all",
+        action="store_true",
+        help="Test all algorithm combinations across solvers"
     )
     
     args = parser.parse_args()
-    print(f"Running benchmarks with {args.episodes} episodes per solver...\n")
-    stats = run_benchmarks(episodes=args.episodes, solvers=args.solvers)
-    print("\n" + "="*60)
-    print("SNAKE SOLVER STATISTICS")
-    print("="*60)
-    display_table(stats)
+    
+    if args.all:
+        episodes = args.episodes if args.episodes is not None else 5
+        print("="*90)
+        print("ALGORITHM COMBINATION BENCHMARK")
+        print(f"Testing all algorithm combinations across solvers ({episodes} episodes each)")
+        print("="*90)
+        print("\nProgress:")
+        results = run_pathfinder_benchmarks(episodes=episodes)
+        display_pathfinder_table(results)
+        print(f"\n{'='*90}")
+        print("Benchmark Complete!")
+        print("="*90)
+    else:
+        episodes = args.episodes if args.episodes is not None else 10
+        print(f"Running benchmarks with {episodes} episodes per solver...\n")
+        stats = run_benchmarks(episodes=episodes, solvers=args.solvers)
+        print("\n" + "="*60)
+        print("SNAKE SOLVER STATISTICS")
+        print("="*60)
+        display_table(stats)
 
 if __name__ == "__main__":
     main()

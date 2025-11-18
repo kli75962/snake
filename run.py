@@ -7,10 +7,7 @@ def main():
     dict_solver = {
         "greedy": "GreedySolver",
         "hamilton": "HamiltonSolver",
-        "astar": "AStarSolver",
-        "astar_safe": "AStarSafeSolver",
         "dqn": "DQNSolver",
-        "dfs": "DFSSolver", 
     }
 
     dict_mode = {
@@ -18,6 +15,12 @@ def main():
         "bcmk": GameMode.BENCHMARK,
         "train_dqn": GameMode.TRAIN_DQN,
         "train_dqn_gui": GameMode.TRAIN_DQN_GUI,
+    }
+
+    dict_algorithms = {
+        "bfs": "bfs",
+        "astar": "astar",
+        "dfs": "dfs",
     }
 
     parser = argparse.ArgumentParser(description="Run snake game agent.")
@@ -34,6 +37,18 @@ def main():
         help="game mode (default: normal)",
     )
     parser.add_argument(
+        "--shortalgr",
+        default="bfs",
+        choices=dict_algorithms.keys(),
+        help="algorithm for finding shortest path (default: bfs)",
+    )
+    parser.add_argument(
+        "--longalgr",
+        default="bfs",
+        choices=dict_algorithms.keys(),
+        help="algorithm for finding longest path (default: bfs)",
+    )
+    parser.add_argument(
         "--stats",
         action="store_true",
         help="show GUI with all solvers' statistics",
@@ -42,6 +57,11 @@ def main():
         "--stats-cli",
         action="store_true",
         help="display all solvers' statistics in command-line table format",
+    )
+    parser.add_argument(
+        "-all",
+        action="store_true",
+        help="test all algorithm combinations across solvers (requires --stats-cli)",
     )
     parser.add_argument(
         "-e",
@@ -57,18 +77,34 @@ def main():
         window = SolverStatsWindow()
         window.mainloop()
     elif args.stats_cli:
-        from tools.stats_cli import run_benchmarks, display_table
-        print(f"Running benchmarks with {args.episodes} episodes per solver...\n")
-        stats = run_benchmarks(episodes=args.episodes)
-        print("\n" + "="*60)
-        print("SNAKE SOLVER STATISTICS")
-        print("="*60)
-        display_table(stats)
+        from tools.stats_cli import run_benchmarks, display_table, run_pathfinder_benchmarks, display_pathfinder_table
+        if args.all:
+            episodes = args.episodes if args.episodes is not None else 5
+            print("="*90)
+            print("ALGORITHM COMBINATION BENCHMARK")
+            print(f"Testing all algorithm combinations across solvers ({episodes} episodes each)")
+            print("="*90)
+            print("\nProgress:")
+            results = run_pathfinder_benchmarks(episodes=episodes)
+            display_pathfinder_table(results)
+            print(f"\n{'='*90}")
+            print("Benchmark Complete!")
+            print("="*90)
+        else:
+            print(f"Running benchmarks with {args.episodes} episodes per solver...\n")
+            stats = run_benchmarks(episodes=args.episodes)
+            print("\n" + "="*60)
+            print("SNAKE SOLVER STATISTICS")
+            print("="*60)
+            display_table(stats)
     else:
         conf = GameConf()
         conf.solver_name = dict_solver[args.s]
         conf.mode = dict_mode[args.m]
+        conf.short_algr = dict_algorithms[args.shortalgr]
+        conf.long_algr = dict_algorithms[args.longalgr]
         print(f"Solver: {conf.solver_name}   Mode: {conf.mode}")
+        print(f"Short algorithm: {conf.short_algr}   Long algorithm: {conf.long_algr}")
 
         Game(conf).run()
 
