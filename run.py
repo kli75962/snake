@@ -21,6 +21,7 @@ def main():
         "bfs": "bfs",
         "astar": "astar",
         "dfs": "dfs",
+        "dijkstra": "dijkstra",
     }
 
     parser = argparse.ArgumentParser(description="Run snake game agent.")
