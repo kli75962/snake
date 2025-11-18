@@ -41,6 +41,11 @@ class Pos:
     def __hash__(self):
         return hash((self.x, self.y))
 
+    def __lt__(self, other):
+        if self.x != other.x:
+            return self.x < other.x
+        return self.y < other.y
+
     @staticmethod
     def manhattan_dist(p1, p2):
         return abs(p1.x - p2.x) + abs(p1.y - p2.y)
