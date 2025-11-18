@@ -42,6 +42,20 @@ class _AStarCell:
         self.in_open = False
         self.in_closed = False
 
+class _DijkstraCell:
+    def __init__(self):
+        self.reset()
+
+    def __str__(self):
+        return f"{{ dist: {self.dist}  parent: {str(self.parent)} processed: {self.processed} }}"
+
+    __repr__ = __str__
+
+    def reset(self):
+        self.dist = sys.maxsize
+        self.parent = None
+        self.processed = False
+
 
 class PathSolver(BaseSolver):
     def __init__(self, snake, short_algr="bfs", long_algr="heuristic"):
@@ -54,6 +68,10 @@ class PathSolver(BaseSolver):
         ]
         self._astar_table = [
             [_AStarCell() for _ in range(snake.map.num_cols)]
+            for _ in range(snake.map.num_rows)
+        ]
+        self._dijkstra_table = [
+            [_DijkstraCell() for _ in range(snake.map.num_cols)]
             for _ in range(snake.map.num_rows)
         ]
 
@@ -85,8 +103,10 @@ class PathSolver(BaseSolver):
             return self._dfs_path_to(des)
         elif self.short_algr == "bfs":
             return self._bfs_shortest_path(des)
+        elif self.short_algr == "dijkstra":
+            return self._dijkstra_search(des)
         else:
-            raise ValueError(f"Unsupported shortest path algorithm: {self.short_algr}. Use 'bfs', 'astar', or 'dfs'.")
+            raise ValueError(f"Unsupported shortest path algorithm: {self.short_algr}. Use 'bfs', 'astar', 'dijkstra' or 'dfs'.")
 
     def _find_longest_path(self, des):
         """Route longest path finding based on algorithm selection, using base algorithm + heuristic extension."""
@@ -284,6 +304,61 @@ class PathSolver(BaseSolver):
                         heappush(open_set, (neighbor_cell.f, counter, neighbor))
                         neighbor_cell.in_open = True
         return deque()
+    
+    def _dijkstra_search(self, destination):
+        """Find path using Dijkstra's algorithm."""
+        self._reset_dijkstra_table()
+
+        head = self.snake.head()
+        start_cell = self._dijkstra_table[head.x][head.y]
+        start_cell.dist = 0
+
+        priority_queue = []
+        heappush(priority_queue, (start_cell.dist, head))
+
+        while priority_queue:
+            current_dist, current_pos = heappop(priority_queue)
+            current_cell = self._dijkstra_table[current_pos.x][current_pos.y]
+
+            if current_cell.processed:
+                continue
+            current_cell.processed = True
+
+            if current_pos == destination:
+                return self._build_dijkstra_path(head, destination)
+            
+            if current_dist > current_cell.dist:
+                continue
+
+            for neighbor_pos in current_pos.all_adj():
+                if not self._is_valid_dijkstra(neighbor_pos):
+                    continue
+
+                new_dist = current_dist + 1
+                neighbor_cell = self._dijkstra_table[neighbor_pos.x][neighbor_pos.y]
+
+                if new_dist < neighbor_cell.dist:
+                    neighbor_cell.dist = new_dist
+                    neighbor_cell.parent = current_pos
+                    heappush(priority_queue, (new_dist, neighbor_pos))
+        return deque()
+    
+    
+    def _reset_dijkstra_table(self):
+        for row in self._dijkstra_table:
+            for cell in row:
+                cell.reset()
+
+    def _build_dijkstra_path(self, src, des):
+        path = deque()
+        current = des
+        while current != src:
+            parent = self._dijkstra_table[current.x][current.y].parent
+            if parent is None:
+                return deque()
+            path.appendleft(parent.direc_to(current))
+            current = parent
+        return path
 
     def _dfs_path_to(self, destination):
         """Find path using DFS algorithm."""
@@ -311,10 +386,19 @@ class PathSolver(BaseSolver):
         """Manhattan distance heuristic for A*."""
         from snake.base.pos import Pos
         return Pos.manhattan_dist(pos, goal)
+    
+    def _is_safe(self, pos):
+        in_bounds = 0 <= pos.x < self.map.num_rows and 0 <= pos.y < self.map.num_cols
+        is_valid_type = self.map.point(pos).type in {PointType.EMPTY, PointType.FOOD}
+        return in_bounds and is_valid_type
 
     def _is_valid_astar(self, pos):
         """Check if position is valid for A*."""
-        return self.map.is_safe(pos)
-
+        return self._is_safe(pos)
+    
+    def _is_valid_dijkstra(self, pos):
+        return self._is_safe(pos)
+    
     def _is_valid(self, pos):
-        return self.map.is_safe(pos) and not self._table[pos.x][pos.y].visit
+        return self._is_safe(pos) and not self._table[pos.x][pos.y].visit
+    
