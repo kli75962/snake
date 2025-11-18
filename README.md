@@ -59,9 +59,12 @@ python run.py -s greedy --shortalgr astar --longalgr dfs
 
 # Use DFS for both shortest and longest paths
 python run.py -s hamilton --shortalgr dfs --longalgr dfs
+
+#Use greedy to control the snake's movement, and use Dijkstra when calculating the shortest path. 
+python run.py -s greedy --shortalgr dijkstra
 ```
 
-**Available algorithms:** `bfs`, `astar`, `dfs`
+**Available algorithms:** `bfs`, `astar`, `dfs`,`dijkstra`
 
 ## Usage
 
