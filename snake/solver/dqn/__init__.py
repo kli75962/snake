@@ -93,7 +93,7 @@ class DQNSolver(BaseSolver):
         self._max_learn_step = (
             3000000  # Maximum learning steps (require >= self._restore_step)
         )
-        self._restore_step = 5000  # Which learning step to restore (0 means not restore)
+        self._restore_step = 1910000  # Which learning step to restore (0 means not restore)
 
         # Rewards
         self._rwd_empty = -0.005

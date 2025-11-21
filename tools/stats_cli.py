@@ -117,12 +117,12 @@ def run_pathfinder_benchmarks(episodes=5):
     long_algorithms = ["bfs", "astar", "dfs"]
     
     results = {}
-    total_combinations = len(solvers) * len(algorithms) * len(algorithms)
+    total_combinations = len(solvers) * len(short_algorithms) * len(long_algorithms)
     current = 0
     
     for solver_name in solvers:
-        for short_alg in algorithms:
-            for long_alg in algorithms:
+        for short_alg in short_algorithms:
+            for long_alg in long_algorithms:
                 current += 1
                 print(f"[{current}/{total_combinations}] {solver_name} "
                       f"(short={short_alg}, long={long_alg})... ", end="", flush=True)
