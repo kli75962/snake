@@ -4,6 +4,15 @@ The project focuses on the artificial intelligence of the [Snake][snake-wiki] ga
 
 ***[Algorithms >][doc-algorithms]***
 
+## Features
+
+- **Multiple solvers:** Hamiltonian cycle planner, a fast greedy path-finder, and an experimental Deep Q-Network (DQN) agent you can train yourself.
+- **Configurable path-finding:** Mix and match shortest/longest path algorithms；`dijkstra` is supported for shortest paths, while longest paths use `bfs`/`astar`/`dfs`/`heuristic`.
+- **Training-ready DQN pipeline:** Resume from previous checkpoints, log history, and visualize learning curves automatically.
+- **Benchmark tooling:** Headless benchmark mode, CLI table summaries, and exhaustive algorithm-combination sweeps (including `dijkstra` when benchmarking shortest paths).
+- **Statistics dashboards:** Tkinter GUI dashboard (`--stats`) and CLI reports (`--stats-cli`) for quick solver comparison.
+- **Rich logging:** Every run saves to `logs/`, including solver stats, DQN checkpoints, and matplotlib history plots.
+  
 ## Experiments
 
 We use two metrics to evaluate the performance of an AI:
