@@ -113,7 +113,8 @@ def _print_table_manual(headers, rows):
 def run_pathfinder_benchmarks(episodes=5):
     """Benchmark all solvers with different pathfinder algorithm combinations."""
     solvers = ["hamilton", "greedy"]  # Only path-based solvers support custom algorithms
-    algorithms = ["bfs", "astar", "dfs"]
+    short_algorithms = ["bfs", "astar", "dfs", "dijkstra"]
+    long_algorithms = ["bfs", "astar", "dfs"]
     
     results = {}
     total_combinations = len(solvers) * len(algorithms) * len(algorithms)
