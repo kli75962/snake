@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake AI Algorithm Demo</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f8fafc;
+            --gray: #6b7280;
+            --border: #e5e7eb;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--light);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .algorithm-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .algorithm-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            border: 2px solid var(--border);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .algorithm-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary);
+        }
+        
+        .algorithm-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+        }
+        
+        .algorithm-card.hamilton { --card-color: var(--secondary); }
+        .algorithm-card.greedy { --card-color: var(--primary); }
+        .algorithm-card.stats { --card-color: var(--accent); }
+        
+        .algorithm-card::before {
+            background: var(--card-color);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .algorithm-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .algorithm-score {
+            background: var(--card-color);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .algorithm-desc {
+            color: var(--gray);
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+        }
+
+        .algorithm-options {
+            margin-bottom: 15px;
+        }
+
+        .option-group {
+            margin-bottom: 10px;
+        }
+
+        .option-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .option-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: white;
+            color: var(--dark);
+        }
+
+        .option-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .run-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--card-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .run-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .results-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            border: 2px solid var(--border);
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+        }
+        
+        .results-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        #result {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 200px;
+            border: 1px solid var(--border);
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .placeholder {
+            text-align: center;
+            color: var(--gray);
+            padding: 60px 20px;
+        }
+        
+        .placeholder i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        @media (max-width: 768px) {
+            .algorithm-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Snake AI Algorithm Demo</h1>
+            <p>Compare different AI algorithms for the classic Snake game</p>
+        </div>
+        
+        <div class="content">
+            <div class="algorithm-grid">
+                <div class="algorithm-card hamilton">
+                    <div class="card-header">
+                        <div class="algorithm-name">Hamilton Algorithm</div>
+                        <div class="algorithm-score">63.94 pts</div>
+                    </div>
+                    <div class="algorithm-desc">Best performance with Hamiltonian cycle pathfinding</div>
+                    
+                    <div class="algorithm-options">
+                        <div class="option-group">
+                            <label class="option-label">Short Path Algorithm:</label>
+                            <select class="option-select" id="hamilton-short">
+                                <option value="">Default</option>
+                                <option value="astar">A*</option>
+                                <option value="dfs">DFS</option>
+                                <option value="bfs">BFS</option>
+                                <option value="dijkstra">Dijkstra</option>
+                            </select>
+                        </div>
+                        <div class="option-group">
+                            <label class="option-label">Long Path Algorithm:</label>
+                            <select class="option-select" id="hamilton-long">
+                                <option value="">Default</option>
+                                <option value="astar">A*</option>
+                                <option value="dfs">DFS</option>
+                                <option value="bfs">BFS</option>
+                                <option value="dijkstra">Dijkstra</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button class="run-btn" onclick="runAlgorithm('hamilton', 'hamilton-short', 'hamilton-long')">Run Algorithm</button>
+                </div>
+                
+                <div class="algorithm-card greedy">
+                    <div class="card-header">
+                        <div class="algorithm-name">Greedy Algorithm</div>
+                        <div class="algorithm-score">Basic</div>
+                    </div>
+                    <div class="algorithm-desc">Always moves towards the immediate reward</div>
+                    
+                    <div class="algorithm-options">
+                        <div class="option-group">
+                            <label class="option-label">Short Path Algorithm:</label>
+                            <select class="option-select" id="greedy-short">
+                                <option value="">Default</option>
+                                <option value="astar">A*</option>
+                                <option value="dfs">DFS</option>
+                                <option value="bfs">BFS</option>
+                                <option value="dijkstra">Dijkstra</option>
+                            </select>
+                        </div>
+                        <div class="option-group">
+                            <label class="option-label">Long Path Algorithm:</label>
+                            <select class="option-select" id="greedy-long">
+                                <option value="">Default</option>
+                                <option value="astar">A*</option>
+                                <option value="dfs">DFS</option>
+                                <option value="bfs">BFS</option>
+                                <option value="dijkstra">Dijkstra</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button class="run-btn" onclick="runAlgorithm('greedy', 'greedy-short', 'greedy-long')">Run Algorithm</button>
+                </div>
+                
+                <div class="algorithm-card stats">
+                    <div class="card-header">
+                        <div class="algorithm-name">Statistics Runner</div>
+                        <div class="algorithm-score">Analysis</div>
+                    </div>
+                    <div class="algorithm-desc">Run statistical analysis on all algorithms with multiple episodes</div>
+                    
+                    <div class="algorithm-options">
+                        <div class="option-group">
+                            <label class="option-label">Number of Episodes (-e):</label>
+                            <select class="option-select" id="episodes">
+                                <option value="1">1 Episode</option>
+                                <option value="3">3 Episodes</option>
+                                <option value="5" selected>5 Episodes</option>
+                                <option value="10">10 Episodes</option>
+                                <option value="20">20 Episodes</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button class="run-btn" onclick="runStats()">Run Statistics</button>
+                </div>
+            </div>
+            
+            <div class="results-section">
+                <div class="results-header">
+                    <div class="results-title">Algorithm Results</div>
+                </div>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Running algorithm, please wait...</p>
+                </div>
+                
+                <div id="result">
+                    <div class="placeholder">
+                        <p>Select an algorithm to view performance results</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function runAlgorithm(algorithm, shortSelectId, longSelectId) {
+            // Get selected values
+            const shortAlgr = document.getElementById(shortSelectId).value;
+            const longAlgr = document.getElementById(longSelectId).value;
+            
+            // Show loading indicator
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').innerHTML = '';
+            
+            // Send request to backend
+            fetch('/run-snake', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    algorithm: algorithm,
+                    shortAlgr: shortAlgr,
+                    longAlgr: longAlgr
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading indicator
+                document.getElementById('loading').style.display = 'none';
+                
+                // Display results
+                if (data.success) {
+                    let commandInfo = `Algorithm: ${algorithm.toUpperCase()}`;
+                    if (shortAlgr) commandInfo += ` | Short Path: ${shortAlgr.toUpperCase()}`;
+                    if (longAlgr) commandInfo += ` | Long Path: ${longAlgr.toUpperCase()}`;
+                    
+                    document.getElementById('result').innerHTML = `
+                        <div style="color: var(--secondary); font-weight: 600; margin-bottom: 15px;">
+                            ${commandInfo}
+                        </div>
+                        <pre style="background: white; padding: 15px; border-radius: 8px; border: 1px solid var(--border);">${data.output}</pre>
+                    `;
+                } else {
+                    document.getElementById('result').innerHTML = `
+                        <div style="color: var(--danger); font-weight: 600; margin-bottom: 15px;">
+                            Error Running Algorithm
+                        </div>
+                        <p>${data.error}</p>
+                    `;
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('result').innerHTML = `
+                    <div style="color: var(--danger); font-weight: 600; margin-bottom: 15px;">
+                        Request Error
+                    </div>
+                    <p>${error}</p>
+                `;
+            });
+        }
+
+        function runStats() {
+            // Get selected episodes
+            const episodes = document.getElementById('episodes').value;
+            
+            // Show loading indicator
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').innerHTML = '';
+            
+            // Send request to backend
+            fetch('/run-stats', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    episodes: episodes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading indicator
+                document.getElementById('loading').style.display = 'none';
+                
+                // Display results
+                if (data.success) {
+                    document.getElementById('result').innerHTML = `
+                        <div style="color: var(--secondary); font-weight: 600; margin-bottom: 15px;">
+                            Statistics Analysis (${episodes} Episodes)
+                        </div>
+                        <pre style="background: white; padding: 15px; border-radius: 8px; border: 1px solid var(--border);">${data.output}</pre>
+                    `;
+                } else {
+                    document.getElementById('result').innerHTML = `
+                        <div style="color: var(--danger); font-weight: 600; margin-bottom: 15px;">
+                            Error Running Statistics
+                        </div>
+                        <p>${data.error}</p>
+                    `;
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('result').innerHTML = `
+                    <div style="color: var(--danger); font-weight: 600; margin-bottom: 15px;">
+                        Request Error
+                    </div>
+                    <p>${error}</p>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
