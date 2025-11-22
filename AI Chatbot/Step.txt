@@ -1,0 +1,9 @@
+API = 4f9b892a2219c03b01e425ac9bcd4240
+
+Basic cmd check npm and node
+	node --version
+	npm -- version
+Go to the folder cmd
+	npm install
+	node server.js
+That go to link
